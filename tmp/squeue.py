@@ -111,8 +111,8 @@ def get_squeue(job_dict,key=None):
 if __name__ == "__main__":
 
     try:
-        a = pyslurm.job()
-        jobs = a.get()
+        rjob = pyslurm.job()
+        jobs = rjob.get()
         if len(jobs) > 0:
             num_jobs = get_squeue(jobs)
             num_cpus = get_squeue(jobs,'num_cpus')
