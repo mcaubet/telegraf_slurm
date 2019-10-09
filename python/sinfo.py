@@ -1,95 +1,43 @@
-#!/usr/bin/env python
+#!/usr/bin/env /usr/local/conda/envs/slurm/bin/python
 
 import pyslurm
 import socket
+import re
 
-def get_sinfo(node_dict,partition):
-
-    IDLE = 0
-    ALLOCATED = 0
-    MIXED = 0
-    DRAINED = 0
-    DRAINING = 0
-    DOWN = 0
-    FAIL = 0
-    UNKNOWN = 0
-    COMPLETING = 0
-    MAINT = 0
-    RESERVED = 0
-    POWER_DOWN = 0
-    POWER_UP = 0
-    FUTURE = 0
-    NO_RESPOND = 0
-    NPC = 0
-    PERFCTRS = 0
-    
+def get_sinfo(node_dict):
     for nodeid in node_dict:
-        if partition in node_dict[nodeid]["partitions"]:
-            if node_dict[nodeid]["state"] == "IDLE":
-                IDLE = IDLE + 1
-            if node_dict[nodeid]["state"] == "ALLOCATED":
-                ALLOCATED = ALLOCATED + 1
-            if node_dict[nodeid]["state"] == "MIXED":
-                MIXED = MIXED + 1
-            if node_dict[nodeid]["state"] == "DRAINED":
-                DRAINED = DRAINED + 1
-            if node_dict[nodeid]["state"] == "IDLE+DRAIN":
-                DRAINED = DRAINED + 1
-            if node_dict[nodeid]["state"] == "DRAINING":
-                DRAINING = DRAINING + 1
-            if node_dict[nodeid]["state"] == "MIXED+DRAIN":
-                DRAINING = DRAINING + 1
-            if node_dict[nodeid]["state"] == "ALLOCATED+DRAIN":
-                DRAINING = DRAINING + 1
-            if node_dict[nodeid]["state"] == "DOWN":
-                DOWN = DOWN + 1
-            if node_dict[nodeid]["state"] == "FAIL":
-                FAIL = FAIL + 1
-            if node_dict[nodeid]["state"] == "UNKNOWN":
-                UNKNOWN = UNKNOWN + 1
-            if node_dict[nodeid]["state"] == "COMPLETING":
-                COMPLETING = COMPLETING + 1
-            if node_dict[nodeid]["state"] == "MAINT":
-                MAINT = MAINT + 1
-            if node_dict[nodeid]["state"] == "RESERVED":
-                RESERVED = RESERVED + 1
-            if node_dict[nodeid]["state"] == "POWER_DOWN":
-                POWER_DOWN = POWER_DOWN + 1
-            if node_dict[nodeid]["state"] == "POWER_UP":
-                POWER_UP = POWER_UP + 1
-            if node_dict[nodeid]["state"] == "NO_RESPOND":
-                NO_RESPOND = NO_RESPOND + 1
-            if node_dict[nodeid]["state"] == "FUTURE":
-                FUTURE = FUTURE + 1
-            if node_dict[nodeid]["state"] == "NPC":
-                NPC = NPC + 1
-            if node_dict[nodeid]["state"] == "PERFCTRS":
-                PERFCTRS = PERFCTRS + 1
-
-    return "idle={0},allocated={1},mixed={2},drained={3},draining={4},down={5},fail={6},unknown={7},completing={8},maintenance={9},reserved={10},power_down={11},power_up={12},no_respond={13},future={14},npc={15},perfctrs={16}".format(IDLE,ALLOCATED,MIXED,DRAINED,DRAINING,DOWN,FAIL,UNKNOWN,COMPLETING,MAINT,RESERVED,POWER_DOWN,POWER_UP,NO_RESPOND,FUTURE,NPC,PERFCTRS)
+        nodename = node_dict[nodeid]["name"]
+        state = node_dict[nodeid]["state"]
+        alloc_cpus = node_dict[nodeid]["alloc_cpus"]
+        alloc_mem = node_dict[nodeid]["alloc_mem"]
+        boot_time = node_dict[nodeid]["boot_time"]
+        cores = node_dict[nodeid]["cores"]
+        cores_per_socket = node_dict[nodeid]["cores_per_socket"]
+        cpu_load = node_dict[nodeid]["cpu_load"]
+        cpus = node_dict[nodeid]["cpus"]
+        err_cpus = node_dict[nodeid]["err_cpus"]
+        free_mem = node_dict[nodeid]["free_mem"]
+        mem_spec_limit = node_dict[nodeid]["mem_spec_limit"]
+        node_hostname = node_dict[nodeid]["node_hostname"]
+        partitions = ';'.join(node_dict[nodeid]["partitions"])
+        real_memory = node_dict[nodeid]["real_memory"]
+        slurmd_start_time = node_dict[nodeid]["slurmd_start_time"]
+        sockets = node_dict[nodeid]["sockets"]
+        threads = node_dict[nodeid]["threads"]
+        tmp_disk = node_dict[nodeid]["tmp_disk"]
+        weight = node_dict[nodeid]["weight"]
+        print("slurm,metric=nodes,hostname={},nodename={},partitions={} state=\"{}\",alloc_cpus={},alloc_mem={},boot_time={},cores={},cores_per_socket={},cpu_load={},cpus={},err_cpus={},free_mem={},mem_spec_limit={},node_hostname=\"{}\",real_memory={},slurmd_start_time={},sockets={},threads={},tmp_disk={},weight={}".format(socket.gethostname(),nodename,partitions,state,alloc_cpus,alloc_mem,boot_time,cores,cores_per_socket,cpu_load,cpus,err_cpus,free_mem,mem_spec_limit,node_hostname,real_memory,slurmd_start_time,sockets,threads,tmp_disk,weight))
 
 if __name__ == "__main__":
 
-    try: 
-        rpartition = pyslurm.partition()
-        partitions = rpartition.get()
+    try:
+        rnode = pyslurm.node()
+        nodes = rnode.get()
         
-        if len(partitions) > 0:
-
-            try:
-                for partition in partitions:
-                    rnode = pyslurm.node()
-                    nodes = rnode.get()
-    
-                    if len(nodes) > 0:
-                        nodes = get_sinfo(nodes,partition)
-                        print("SQueue,metric=nodes,hostname={0},partition={1} {2}".format(socket.gethostname(),partition,nodes))
-                    else:
-                        print("No Nodes found !")
-    
-            except ValueError as enode:
-                print("Error - {0}".format(enode.args[0]))
+        if len(nodes) > 0:
+            get_sinfo(nodes)
         else:
-            print("No Partitions found !")
-    except ValueError as epart:
-        print("Error - {0}".format(epart.args[0]))
+            print("No Nodes found !")
+    
+    except ValueError as enode:
+        print("Error - {0}".format(enode.args[0]))
